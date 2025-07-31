@@ -38,4 +38,39 @@ namespace data {
         return true;
     }
 
+    std::vector<domain::Wallet> WalletRepository::getAllWallets() {
+        std::vector<domain::Wallet> wallets;
+
+        if (!dbHelper.getDb()) {
+            LOGE_REPO("Database not open for getAllWallets.");
+            return wallets;
+        }
+
+        sqlite3_stmt *stmt;
+
+        const char* sql = "SELECT ID, NAME, DESCRIPTION, BALANCE FROM Wallets;";
+
+        int rc = sqlite3_prepare_v2(dbHelper.getDb(), sql, -1, &stmt, 0);
+        if (rc != SQLITE_OK) {
+            LOGE_REPO("SQL error (getAllWallets prepare): %s", sqlite3_errmsg(dbHelper.getDb()));
+            return wallets;
+        }
+
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            domain::Wallet wallet;
+
+            wallet.id = sqlite3_column_int(stmt, 0);
+            wallet.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+            wallet.description = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+            wallet.balance = sqlite3_column_int64(stmt, 3);
+
+            wallets.push_back(wallet);
+        }
+
+        sqlite3_finalize(stmt);
+
+        LOGD_REPO("Retrieved %zu wallets.", wallets.size());
+        return wallets;
+    }
+
 }

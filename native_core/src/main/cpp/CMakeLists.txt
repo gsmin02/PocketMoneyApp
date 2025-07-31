@@ -14,8 +14,9 @@ add_library(
 )
 
 target_include_directories(native_core PRIVATE
-        src/main/cpp/domain
-        src/main/cpp/data
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/domain
+        ${CMAKE_CURRENT_SOURCE_DIR}/data
 )
 
 find_library(
