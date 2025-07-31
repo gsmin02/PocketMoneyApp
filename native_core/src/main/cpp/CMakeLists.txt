@@ -7,6 +7,15 @@ add_library(
         SHARED
         native_core.cpp
         sqlite3.c
+        domain/Wallet.cpp
+        domain/Transaction.cpp
+        data/DatabaseHelper.cpp
+        data/WalletRepository.cpp
+)
+
+target_include_directories(native_core PRIVATE
+        src/main/cpp/domain
+        src/main/cpp/data
 )
 
 find_library(
