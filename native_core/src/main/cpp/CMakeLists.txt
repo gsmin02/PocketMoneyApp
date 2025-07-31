@@ -6,6 +6,7 @@ add_library(
         native_core
         SHARED
         native_core.cpp
+        sqlite3.c
 )
 
 find_library(
