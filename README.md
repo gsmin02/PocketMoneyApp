@@ -6,7 +6,7 @@ PocketMoneyApp은 데이터를 **정확하고 빠르게 관리**하는 데 초�
 
 ## 개발 결과 이미지
 
-![](C:\Users\ss\Downloads\img\1.png)
+<img width="3264" height="1536" alt="1" src="https://github.com/user-attachments/assets/2036432c-a74a-45f0-a46f-c00c5bd9b2f0" />
 
 ---
 
@@ -33,11 +33,11 @@ PocketMoneyApp은 데이터를 **정확하고 빠르게 관리**하는 데 초�
 
 아키텍처 설계에 관한 내용을 찾아보던 중 다음 두 구조 중에 고민하였습니다.
 
-![](C:\Users\ss\Downloads\img\2.png)
+<img width="736" height="300" alt="2" src="https://github.com/user-attachments/assets/93d4b55b-5a76-4377-b6b2-a9b56e04055a" />
 
 3-tier와 4-tier를 고민하던 중, **5일이라는 짧은 시간** 내에 구현을 목표로 했기 때문에 **3-tier**로 개발하기로 결정했습니다.
 
-![](C:\Users\ss\Downloads\img\3.png)
+<img width="1376" height="1664" alt="3" src="https://github.com/user-attachments/assets/363b0498-c8e9-4aab-9b2f-b5cba4a5e910" />
 
 - **Presentation Tier (Kotlin)**
     - 사용자 인터페이스 및 상호작용을 담당합니다.
@@ -100,7 +100,7 @@ if (success && s_walletRepo != nullptr) {
 }
 ```
 - 결과 로그
-  ![](C:\Users\ss\Downloads\img\4.png)
+<img width="1612" height="178" alt="4" src="https://github.com/user-attachments/assets/5e6abfe8-3614-4b4d-b028-9ff90824cc65" />
 
 - **현재의 한계**
     - '전체 재계산' 방식은 정확하고 효율적일 수 있지만, **트랜잭션 수가 극단적으로 많아질 경우(예: 10만 건 이상)** 성능 저하가 생길 수 있다고 생각합니다.
