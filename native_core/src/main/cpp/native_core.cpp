@@ -65,8 +65,6 @@ Java_com_example_pocketmoneyapp_MainActivity_initializeNativeDb(
     }
 }
 
-// createWalletNative 함수
-// Kotlin 에서 WalletDto 의 내용을 받아서 C++ Wallet 객체 생성 및 저장
 extern "C" JNIEXPORT jboolean JNICALL
 Java_com_example_pocketmoneyapp_MainActivity_createWalletNative(
         JNIEnv* env,
@@ -97,26 +95,107 @@ Java_com_example_pocketmoneyapp_MainActivity_createWalletNative(
     return success ? JNI_TRUE : JNI_FALSE;
 }
 
-// getAllWalletNamesNative
-extern "C" JNIEXPORT jstring JNICALL
-Java_com_example_pocketmoneyapp_MainActivity_getAllWalletNamesNative(
+extern "C" JNIEXPORT jobjectArray JNICALL
+Java_com_example_pocketmoneyapp_MainActivity_getAllWalletsNative(
         JNIEnv* env,
         jobject /* this */) {
 
     if (s_walletRepo == nullptr) {
         LOGE("WalletRepository not initialized. Call initializeNativeDb first.");
-        return env->NewStringUTF("Error: Native DB not initialized.");
+        return nullptr;
     }
 
     std::vector<domain::Wallet> wallets = s_walletRepo->getAllWallets();
-    std::string result_str = "Wallets:\n";
-    if (wallets.empty()) {
-        result_str += "No wallets found.";
-    } else {
-        for (const auto& wallet : wallets) {
-            result_str += "- " + wallet.name + " (ID: " + std::to_string(wallet.id) + ", Balance: " + std::to_string(wallet.balance) + ")\n";
-        }
+
+    jclass walletDtoClass = env->FindClass("com/example/pocketmoneyapp/data/WalletDto");
+    if (walletDtoClass == nullptr) {
+        LOGE("Failed to find class 'com/example/pocketmoneyapp/data/WalletDto'.");
+        return nullptr;
     }
 
-    return env->NewStringUTF(result_str.c_str());
+    jmethodID constructor = env->GetMethodID(walletDtoClass, "<init>", "(ILjava/lang/String;Ljava/lang/String;J)V");
+    if (constructor == nullptr) {
+        LOGE("Failed to find WalletDto constructor.");
+        env->DeleteLocalRef(walletDtoClass);
+        return nullptr;
+    }
+
+    jobjectArray walletDtoArray = env->NewObjectArray(wallets.size(), walletDtoClass, nullptr);
+    if (walletDtoArray == nullptr) {
+        LOGE("Failed to create jobjectArray.");
+        env->DeleteLocalRef(walletDtoClass);
+        return nullptr;
+    }
+
+    for (size_t i = 0; i < wallets.size(); ++i) {
+        const auto& wallet = wallets[i];
+
+        jstring nameJStr = env->NewStringUTF(wallet.name.c_str());
+        jstring descJStr = env->NewStringUTF(wallet.description.c_str());
+
+        jobject walletDtoObj = env->NewObject(walletDtoClass, constructor,
+                                              static_cast<jint>(wallet.id),
+                                              nameJStr,
+                                              descJStr,
+                                              static_cast<jlong>(wallet.balance));
+
+        env->SetObjectArrayElement(walletDtoArray, i, walletDtoObj);
+
+        env->DeleteLocalRef(nameJStr);
+        env->DeleteLocalRef(descJStr);
+        env->DeleteLocalRef(walletDtoObj);
+    }
+
+    env->DeleteLocalRef(walletDtoClass);
+
+    LOGD("Successfully retrieved and created %zu WalletDto objects.", wallets.size());
+    return walletDtoArray;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_example_pocketmoneyapp_MainActivity_updateWalletNative(
+        JNIEnv* env,
+        jobject /* this */,
+        jint id,
+        jstring nameJString,
+        jstring descriptionJString,
+        jlong balance) {
+
+    if (s_walletRepo == nullptr) {
+        LOGE("WalletRepository not initialized. Call initializeNativeDb first.");
+        return JNI_FALSE;
+    }
+
+    const char* nameCStr = env->GetStringUTFChars(nameJString, nullptr);
+    const char* descCStr = env->GetStringUTFChars(descriptionJString, nullptr);
+
+    std::string name = nameCStr;
+    std::string description = descCStr;
+
+    env->ReleaseStringUTFChars(nameJString, nameCStr);
+    env->ReleaseStringUTFChars(descriptionJString, descCStr);
+
+    domain::Wallet updatedWallet(static_cast<int>(id), name, description, static_cast<long long>(balance));
+
+    bool success = s_walletRepo->updateWallet(updatedWallet);
+    LOGD("updateWalletNative result: %s", success ? "true" : "false");
+
+    return success ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_example_pocketmoneyapp_MainActivity_deleteWalletNative(
+        JNIEnv* env,
+        jobject /* this */,
+        jint id) {
+
+    if (s_walletRepo == nullptr) {
+        LOGE("WalletRepository not initialized. Call initializeNativeDb first.");
+        return JNI_FALSE;
+    }
+
+    bool success = s_walletRepo->deleteWallet(static_cast<int>(id));
+    LOGD("deleteWalletNative for ID %d result: %s", static_cast<int>(id), success ? "true" : "false");
+
+    return success ? JNI_TRUE : JNI_FALSE;
 }

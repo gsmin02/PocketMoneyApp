@@ -73,4 +73,65 @@ namespace data {
         return wallets;
     }
 
+    bool WalletRepository::updateWallet(const domain::Wallet& wallet) {
+        if (!dbHelper.getDb()) {
+            LOGE_REPO("Database not open for updateWallet.");
+            return false;
+        }
+
+        sqlite3_stmt *stmt;
+        const char* sql = "UPDATE Wallets SET NAME = ?, DESCRIPTION = ?, BALANCE = ? WHERE ID = ?;";
+        int rc = sqlite3_prepare_v2(dbHelper.getDb(), sql, -1, &stmt, 0);
+        if (rc != SQLITE_OK) {
+            LOGE_REPO("SQL error (updateWallet prepare): %s", sqlite3_errmsg(dbHelper.getDb()));
+            return false;
+        }
+
+        // 바인딩: ?에 값을 바인딩
+        sqlite3_bind_text(stmt, 1, wallet.name.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(stmt, 2, wallet.description.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int64(stmt, 3, wallet.balance);
+        sqlite3_bind_int(stmt, 4, wallet.id);
+
+        rc = sqlite3_step(stmt);
+        if (rc != SQLITE_DONE) {
+            LOGE_REPO("SQL error (updateWallet step): %s", sqlite3_errmsg(dbHelper.getDb()));
+            sqlite3_finalize(stmt);
+            return false;
+        }
+
+        sqlite3_finalize(stmt);
+        LOGD_REPO("Wallet ID %d updated successfully.", wallet.id);
+        return true;
+    }
+
+    bool WalletRepository::deleteWallet(int id) {
+        if (!dbHelper.getDb()) {
+            LOGE_REPO("Database not open for deleteWallet.");
+            return false;
+        }
+
+        sqlite3_stmt *stmt;
+        const char* sql = "DELETE FROM Wallets WHERE ID = ?;";
+        int rc = sqlite3_prepare_v2(dbHelper.getDb(), sql, -1, &stmt, 0);
+        if (rc != SQLITE_OK) {
+            LOGE_REPO("SQL error (deleteWallet prepare): %s", sqlite3_errmsg(dbHelper.getDb()));
+            return false;
+        }
+
+        // 바인딩: ?에 ID 값 바인딩
+        sqlite3_bind_int(stmt, 1, id);
+
+        rc = sqlite3_step(stmt);
+        if (rc != SQLITE_DONE) {
+            LOGE_REPO("SQL error (deleteWallet step): %s", sqlite3_errmsg(dbHelper.getDb()));
+            sqlite3_finalize(stmt);
+            return false;
+        }
+
+        sqlite3_finalize(stmt);
+        LOGD_REPO("Wallet ID %d deleted successfully.", id);
+        return true;
+    }
+
 }

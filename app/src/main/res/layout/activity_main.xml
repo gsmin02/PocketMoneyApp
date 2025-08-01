@@ -60,26 +60,60 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="8dp"/>
 
+    <EditText
+        android:id="@+id/walletIdEditText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Wallet ID for Update/Delete"
+        android:inputType="number"
+        app:layout_constraintTop_toBottomOf="@id/createWalletButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
+    <LinearLayout
+        android:id="@+id/actionButtonsLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/walletIdEditText"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/updateWalletButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Update Wallet"
+            android:layout_marginEnd="4dp"/>
+
+        <Button
+            android:id="@+id/deleteWalletButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Delete Wallet"
+            android:layout_marginStart="4dp"/>
+    </LinearLayout>
+
     <Button
         android:id="@+id/refreshListButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Refresh Wallet List"
-        app:layout_constraintTop_toBottomOf="@id/createWalletButton"
+        app:layout_constraintTop_toBottomOf="@id/actionButtonsLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="8dp"/>
 
-    <TextView
-        android:id="@+id/walletListTextView"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/walletRecyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
-        android:text="Wallets will appear here..."
-        android:scrollbars="vertical"
         app:layout_constraintTop_toBottomOf="@id/refreshListButton"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:listitem="@layout/list_item_wallet" /> </androidx.constraintlayout.widget.ConstraintLayout>

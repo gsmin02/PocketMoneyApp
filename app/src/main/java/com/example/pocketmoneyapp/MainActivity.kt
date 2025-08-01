@@ -6,8 +6,12 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.pocketmoneyapp.data.WalletDto
+import com.example.pocketmoneyapp.ui.WalletAdapter
 import java.io.File
+import kotlin.collections.List
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,14 +23,24 @@ class MainActivity : AppCompatActivity() {
 
     private external fun initializeNativeDb(dbPath: String)
     private external fun createWalletNative(name: String, description: String, balance: Long): Boolean
-    private external fun getAllWalletNamesNative(): String // 모든 지갑 이름을 문자열로 반환 (간단한 테스트용)
+    // 받은 Array<WalletDto>를 toList()를 활용해 List<WalletDto>로 변환
+    private external fun getAllWalletsNative(): Array<WalletDto>
+
+    // 지갑 수정 및 삭제 JNI 함수 추가
+    private external fun updateWalletNative(id: Int, name: String, description: String, balance: Long): Boolean
+    private external fun deleteWalletNative(id: Int): Boolean
 
     private lateinit var walletNameEditText: EditText
     private lateinit var walletDescEditText: EditText
     private lateinit var walletBalanceEditText: EditText
     private lateinit var createWalletButton: Button
-    private lateinit var walletListTextView: TextView
     private lateinit var refreshListButton: Button
+    private lateinit var walletIdEditText: EditText
+    private lateinit var updateWalletButton: Button
+    private lateinit var deleteWalletButton: Button
+    private lateinit var walletRecyclerView: RecyclerView
+    private lateinit var walletAdapter: WalletAdapter
+    private val walletList = mutableListOf<WalletDto>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,43 +51,82 @@ class MainActivity : AppCompatActivity() {
         walletDescEditText = findViewById(R.id.walletDescEditText)
         walletBalanceEditText = findViewById(R.id.walletBalanceEditText)
         createWalletButton = findViewById(R.id.createWalletButton)
-        walletListTextView = findViewById(R.id.walletListTextView)
         refreshListButton = findViewById(R.id.refreshListButton)
 
+        walletIdEditText = findViewById(R.id.walletIdEditText)
+        updateWalletButton = findViewById(R.id.updateWalletButton)
+        deleteWalletButton = findViewById(R.id.deleteWalletButton)
+
+        // RecyclerView 초기화
+        walletRecyclerView = findViewById(R.id.walletRecyclerView)
+        walletRecyclerView.layoutManager = LinearLayoutManager(this) // 세로 방향 스크롤 리스트
+        walletAdapter = WalletAdapter(walletList)
+        walletRecyclerView.adapter = walletAdapter
+
+
+        // 데이터베이스 초기화
         val dbFileName = "pocketmoney.db"
-        // 앱의 내부 저장소 경로 (앱 제거 시 같이 삭제됨)
         val dbPath = applicationContext.filesDir.absolutePath + File.separator + dbFileName
         Log.d("MainActivity", "Database path for native: $dbPath")
         initializeNativeDb(dbPath)
 
-
-        // 지갑 생성 버튼 클릭 리스너
         createWalletButton.setOnClickListener {
             val name = walletNameEditText.text.toString()
             val description = walletDescEditText.text.toString()
             val balanceStr = walletBalanceEditText.text.toString()
-
             if (name.isBlank() || balanceStr.isBlank()) {
                 Log.e("MainActivity", "Wallet name and balance cannot be empty.")
-                walletListTextView.text = "Error: Name and balance required!"
                 return@setOnClickListener
             }
-
             val balance = balanceStr.toLongOrNull() ?: 0L
-
             val success = createWalletNative(name, description, balance)
             if (success) {
-                Log.d("MainActivity", "Wallet created successfully in native.")
-                walletListTextView.text = "Wallet '$name' created successfully!\n"
-                // 생성 후 목록 새로고침
+                Log.d("MainActivity", "Wallet '$name' created successfully in native.")
                 refreshWalletList()
-                // 입력 필드 초기화
                 walletNameEditText.text.clear()
                 walletDescEditText.text.clear()
                 walletBalanceEditText.text.clear()
+                walletIdEditText.text.clear()
             } else {
                 Log.e("MainActivity", "Failed to create wallet in native.")
-                walletListTextView.text = "Failed to create wallet."
+            }
+        }
+
+        updateWalletButton.setOnClickListener {
+            val idStr = walletIdEditText.text.toString()
+            val id = idStr.toIntOrNull()
+            val name = walletNameEditText.text.toString()
+            val description = walletDescEditText.text.toString()
+            val balanceStr = walletBalanceEditText.text.toString()
+            val balance = balanceStr.toLongOrNull() ?: 0L
+
+            if (id != null) {
+                val success = updateWalletNative(id, name, description, balance)
+                if (success) {
+                    Log.d("MainActivity", "Wallet with ID $id updated successfully.")
+                    refreshWalletList()
+                } else {
+                    Log.e("MainActivity", "Failed to update wallet with ID $id.")
+                }
+            } else {
+                Log.e("MainActivity", "Please enter a valid wallet ID.")
+            }
+        }
+
+        deleteWalletButton.setOnClickListener {
+            val idStr = walletIdEditText.text.toString()
+            val id = idStr.toIntOrNull()
+
+            if (id != null) {
+                val success = deleteWalletNative(id)
+                if (success) {
+                    Log.d("MainActivity", "Wallet with ID $id deleted successfully.")
+                    refreshWalletList()
+                } else {
+                    Log.e("MainActivity", "Failed to delete wallet with ID $id.")
+                }
+            } else {
+                Log.e("MainActivity", "Please enter a valid wallet ID.")
             }
         }
 
@@ -81,13 +134,12 @@ class MainActivity : AppCompatActivity() {
             refreshWalletList()
         }
 
-        // 앱 시작 시 초기 목록 로드
         refreshWalletList()
     }
 
     private fun refreshWalletList() {
-        val walletsInfo = getAllWalletNamesNative()
-        walletListTextView.text = walletsInfo
-        Log.d("MainActivity", "Wallet list refreshed: \n$walletsInfo")
+        val wallets: List<WalletDto> = getAllWalletsNative().toList()
+        walletAdapter.updateWallets(wallets) // 어댑터에 데이터 전달 및 갱신
+        Log.d("MainActivity", "Wallet list refreshed with ${wallets.size} items.")
     }
 }
