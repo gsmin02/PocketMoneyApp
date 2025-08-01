@@ -142,7 +142,7 @@ namespace data {
 
         sqlite3_stmt *stmt;
         const char* sql =
-                "SELECT SUM(CASE WHEN Type = 0 THEN Amount ELSE -Amount END) FROM Transactions WHERE WalletID = ?;";
+                "SELECT SUM(CASE WHEN Type = 0 THEN Amount ELSE -Amount END) FROM Transactions WHERE wallet_id = ?;";
         int rc = sqlite3_prepare_v2(dbHelper.getDb(), sql, -1, &stmt, 0);
         if (rc != SQLITE_OK) {
             LOGE_REPO("SQL error (recalculateBalance prepare): %s", sqlite3_errmsg(dbHelper.getDb()));
@@ -158,7 +158,7 @@ namespace data {
             }
         }
         sqlite3_finalize(stmt);
-        LOGD_REPO("Calculated new balance for WalletID %d: %lld", walletId, newBalance);
+        LOGD_REPO("Calculated new balance for wallet_id %d: %lld", walletId, newBalance);
 
         sqlite3_stmt *updateStmt;
         const char* updateSql = "UPDATE Wallets SET BALANCE = ? WHERE ID = ?;";

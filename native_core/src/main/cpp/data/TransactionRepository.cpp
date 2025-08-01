@@ -22,7 +22,7 @@ namespace data {
         }
 
         sqlite3_stmt *stmt;
-        const char* sql = "INSERT INTO Transactions (WalletID, Description, Amount, Type, TransactionDate) VALUES (?, ?, ?, ?, ?);";
+        const char* sql = "INSERT INTO Transactions (wallet_id, Description, Amount, Type, TransactionDate) VALUES (?, ?, ?, ?, ?);";
         int rc = sqlite3_prepare_v2(dbHelper.getDb(), sql, -1, &stmt, 0);
         if (rc != SQLITE_OK) {
             LOGE_REPO("SQL error (createTransaction prepare): %s", sqlite3_errmsg(dbHelper.getDb()));
@@ -56,7 +56,7 @@ namespace data {
         }
 
         sqlite3_stmt *stmt;
-        const char* sql = "SELECT ID, WalletID, Description, Amount, Type, TransactionDate FROM Transactions WHERE ID = ?;";
+        const char* sql = "SELECT ID, wallet_id, Description, Amount, Type, TransactionDate FROM Transactions WHERE ID = ?;";
         int rc = sqlite3_prepare_v2(dbHelper.getDb(), sql, -1, &stmt, 0);
         if (rc != SQLITE_OK) {
             LOGE_REPO("SQL error (getTransactionById prepare): %s", sqlite3_errmsg(dbHelper.getDb()));
@@ -89,7 +89,7 @@ namespace data {
         }
 
         sqlite3_stmt *stmt;
-        std::string sql = "SELECT ID, WalletID, Description, Amount, Type, TransactionDate FROM Transactions WHERE WalletID = ? ORDER BY " + orderBy + ";";
+        std::string sql = "SELECT ID, wallet_id, Description, Amount, Type, TransactionDate FROM Transactions WHERE wallet_id = ? ORDER BY " + orderBy + ";";
         int rc = sqlite3_prepare_v2(dbHelper.getDb(), sql.c_str(), -1, &stmt, 0);
         if (rc != SQLITE_OK) {
             LOGE_REPO("SQL error (getTransactionsByWallet prepare): %s", sqlite3_errmsg(dbHelper.getDb()));
@@ -110,7 +110,7 @@ namespace data {
         }
 
         sqlite3_finalize(stmt);
-        LOGD_REPO("Retrieved %zu transactions for WalletID %d.", transactions.size(), walletId);
+        LOGD_REPO("Retrieved %zu transactions for wallet_id %d.", transactions.size(), walletId);
         return transactions;
     }
 
@@ -121,7 +121,7 @@ namespace data {
         }
 
         sqlite3_stmt *stmt;
-        const char* sql = "UPDATE Transactions SET WalletID = ?, Description = ?, Amount = ?, Type = ?, TransactionDate = ? WHERE ID = ?;";
+        const char* sql = "UPDATE Transactions SET wallet_id = ?, Description = ?, Amount = ?, Type = ?, TransactionDate = ? WHERE ID = ?;";
         int rc = sqlite3_prepare_v2(dbHelper.getDb(), sql, -1, &stmt, 0);
         if (rc != SQLITE_OK) {
             LOGE_REPO("SQL error (updateTransaction prepare): %s", sqlite3_errmsg(dbHelper.getDb()));
@@ -191,7 +191,7 @@ namespace data {
             return transactions; // 빈 벡터 반환
         }
 
-        std::string sql = "SELECT id, wallet_id, description, amount, type, transaction_date FROM transactions WHERE wallet_id = ? ORDER BY transaction_date DESC, id DESC;";
+        std::string sql = "SELECT id, wallet_id, description, amount, type, TransactionDate FROM transactions WHERE wallet_id = ? ORDER BY TransactionDate DESC, id DESC;";
         sqlite3_stmt* stmt;
         int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
         if (rc != SQLITE_OK) {

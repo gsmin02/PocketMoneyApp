@@ -84,9 +84,6 @@ JNIEXPORT void JNI_OnUnload(JavaVM* vm, void* reserved) {
     LOGD("JNI_OnUnload: Global references released.");
 }
 
-
-// MainActivity 관련 JNI 함수들 (companion object가 아니므로 _00024Companion 없음)
-
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_pocketmoneyapp_MainActivity_initializeNativeDb(
         JNIEnv* env,
@@ -270,10 +267,8 @@ Java_com_example_pocketmoneyapp_MainActivity_deleteWalletNative(
     return success ? JNI_TRUE : JNI_FALSE;
 }
 
-// --- TransactionListActivity 관련 JNI 함수들 (companion object가 아니므로 _00024Companion 없음) ---
-
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_example_pocketmoneyapp_TransactionListActivity_createTransactionNative( // <-- 이름 수정 (00024Companion 제거)
+Java_com_example_pocketmoneyapp_TransactionListActivity_createTransactionNative(
         JNIEnv* env, jobject /* this */, jint walletId, jstring descriptionJString, jlong amount, jint type, jstring transactionDateJString) {
 
     if (s_transactionRepo == nullptr) {
@@ -305,7 +300,7 @@ Java_com_example_pocketmoneyapp_TransactionListActivity_createTransactionNative(
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL
-Java_com_example_pocketmoneyapp_TransactionListActivity_getTransactionsByWalletNative( // <-- 이름 수정 (00024Companion 제거)
+Java_com_example_pocketmoneyapp_TransactionListActivity_getTransactionsByWalletNative(
         JNIEnv* env, jobject /* this */, jint walletId) {
 
     if (s_transactionRepo == nullptr) {
@@ -354,7 +349,7 @@ Java_com_example_pocketmoneyapp_TransactionListActivity_getTransactionsByWalletN
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_example_pocketmoneyapp_TransactionListActivity_updateTransactionNative( // <-- 이름 수정 (00024Companion 제거)
+Java_com_example_pocketmoneyapp_TransactionListActivity_updateTransactionNative(
         JNIEnv* env, jobject /* this */, jint id, jint walletId, jstring descriptionJString, jlong amount, jint type, jstring transactionDateJString) {
     if (s_transactionRepo == nullptr) {
         LOGE("TransactionRepository not initialized. Call initializeNativeDb first.");
@@ -386,7 +381,7 @@ Java_com_example_pocketmoneyapp_TransactionListActivity_updateTransactionNative(
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_example_pocketmoneyapp_TransactionListActivity_deleteTransactionNative( // <-- 이름 수정 (00024Companion 제거)
+Java_com_example_pocketmoneyapp_TransactionListActivity_deleteTransactionNative(
         JNIEnv* env, jobject /* this */, jint id, jint walletId) {
     if (s_transactionRepo == nullptr) {
         LOGE("TransactionRepository not initialized. Call initializeNativeDb first.");
@@ -401,4 +396,47 @@ Java_com_example_pocketmoneyapp_TransactionListActivity_deleteTransactionNative(
         LOGD("deleteTransactionNative: Recalculated balance for wallet ID %d", static_cast<int>(walletId));
     }
     return success ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_example_pocketmoneyapp_TransactionListActivity_getWalletByIdNative(
+        JNIEnv* env, jobject /* this */, jint id) {
+
+    if (s_walletRepo == nullptr) {
+        LOGE("WalletRepository not initialized. Call initializeNativeDb first.");
+        return nullptr;
+    }
+
+    domain::Wallet wallet = s_walletRepo->getWalletById(static_cast<int>(id));
+
+    if (wallet.id == 0) {
+        LOGD("getWalletByIdNative (TransactionListActivity): Wallet with ID %d not found.", static_cast<int>(id));
+        return nullptr;
+    }
+
+    jclass walletDtoClass = g_walletDtoClass;
+    if (walletDtoClass == nullptr) {
+        LOGE("Failed to get global ref for WalletDto class in getWalletByIdNative (TransactionListActivity).");
+        return nullptr;
+    }
+    jmethodID constructor = g_walletDtoConstructor;
+    if (constructor == nullptr) {
+        LOGE("Failed to get global ref for WalletDto constructor in getWalletByIdNative (TransactionListActivity).");
+        return nullptr;
+    }
+
+    jstring nameJStr = env->NewStringUTF(wallet.name.c_str());
+    jstring descriptionJStr = env->NewStringUTF(wallet.description.c_str());
+
+    jobject walletDtoObj = env->NewObject(walletDtoClass, constructor,
+                                          static_cast<jint>(wallet.id),
+                                          nameJStr,
+                                          descriptionJStr,
+                                          static_cast<jlong>(wallet.balance));
+
+    env->DeleteLocalRef(nameJStr);
+    env->DeleteLocalRef(descriptionJStr);
+
+    LOGD("getWalletByIdNative (TransactionListActivity): Found wallet ID %d: %s, balance %lld", wallet.id, wallet.name.c_str(), wallet.balance);
+    return walletDtoObj;
 }

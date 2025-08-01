@@ -15,7 +15,7 @@
         android:id="@+id/editTransactionDescriptionEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="트랜잭션 설명"
+        android:hint="거래내역 설명"
         android:inputType="text" />
 
     <TextView

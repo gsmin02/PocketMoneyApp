@@ -58,12 +58,12 @@ namespace data {
         const char* createTransactionsSql =
                 "CREATE TABLE IF NOT EXISTS Transactions ("
                 "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-                "WalletID INTEGER NOT NULL," // 외래키
+                "wallet_id INTEGER NOT NULL," // 외래키
                 "Description TEXT,"
                 "Amount INTEGER NOT NULL," // 금액
                 "Type INTEGER NOT NULL," // 0: INCOME, 1: EXPENSE
                 "TransactionDate TEXT NOT NULL," // YYYY-MM-DD HH:MM:SS
-                "FOREIGN KEY(WalletID) REFERENCES Wallets(ID) ON DELETE CASCADE" // 지갑 삭제 시 트랜잭션도 삭제
+                "FOREIGN KEY(wallet_id) REFERENCES Wallets(ID) ON DELETE CASCADE" // 지갑 삭제 시 트랜잭션도 삭제
                 ");";
 
         int rc_wallet = sqlite3_exec(db, createWalletsSql, 0, 0, &errMsg);
