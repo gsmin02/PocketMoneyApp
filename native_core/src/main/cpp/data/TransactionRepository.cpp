@@ -183,4 +183,42 @@ namespace data {
         }
     }
 
+    std::vector<domain::Transaction> TransactionRepository::getTransactionsByWalletId(int walletId) {
+        std::vector<domain::Transaction> transactions;
+        sqlite3* db = dbHelper.getDb();
+        if (!db) {
+            LOGE_REPO("Failed to get database connection for getting transactions by wallet ID.");
+            return transactions; // 빈 벡터 반환
+        }
+
+        std::string sql = "SELECT id, wallet_id, description, amount, type, transaction_date FROM transactions WHERE wallet_id = ? ORDER BY transaction_date DESC, id DESC;";
+        sqlite3_stmt* stmt;
+        int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc != SQLITE_OK) {
+            LOGE_REPO("Failed to prepare statement for get transactions by wallet ID: %s", sqlite3_errmsg(db));
+            return transactions;
+        }
+
+        sqlite3_bind_int(stmt, 1, walletId);
+
+        while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+            domain::Transaction transaction;
+            transaction.id = sqlite3_column_int(stmt, 0);
+            transaction.walletId = sqlite3_column_int(stmt, 1);
+            transaction.description = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+            transaction.amount = sqlite3_column_int64(stmt, 3);
+            transaction.type = static_cast<domain::TransactionType>(sqlite3_column_int(stmt, 4));
+            transaction.transactionDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+            transactions.push_back(transaction);
+        }
+
+        if (rc != SQLITE_DONE) {
+            LOGE_REPO("Failed to execute statement for get transactions by wallet ID: %s", sqlite3_errmsg(db));
+        }
+
+        sqlite3_finalize(stmt);
+        LOGD_REPO("Retrieved %zu transactions for wallet ID %d.", transactions.size(), walletId);
+        return transactions;
+    }
+
 }

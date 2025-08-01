@@ -1,21 +1,24 @@
 package com.example.pocketmoneyapp.ui
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.pocketmoneyapp.R
-import com.example.pocketmoneyapp.data.WalletDto // WalletDto 임포트
+import com.example.pocketmoneyapp.data.WalletDto
 
-class WalletAdapter(private val wallets: MutableList<WalletDto>) :
-    RecyclerView.Adapter<WalletAdapter.WalletViewHolder>() {
+class WalletAdapter(
+    private val context: Context,
+    private val wallets: MutableList<WalletDto>,
+    private val onItemClick: (WalletDto) -> Unit
+) : RecyclerView.Adapter<WalletAdapter.WalletViewHolder>() {
 
-    class WalletViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val walletIdTextView: TextView = itemView.findViewById(R.id.walletIdTextView)
-        val walletNameTextView: TextView = itemView.findViewById(R.id.walletNameTextView)
-        val walletDescriptionTextView: TextView = itemView.findViewById(R.id.walletDescriptionTextView)
-        val walletBalanceTextView: TextView = itemView.findViewById(R.id.walletBalanceTextView)
+    class WalletViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val nameTextView: TextView = view.findViewById(R.id.walletName)
+        val descriptionTextView: TextView = view.findViewById(R.id.walletDescription)
+        val balanceTextView: TextView = view.findViewById(R.id.walletBalance)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WalletViewHolder {
@@ -26,22 +29,18 @@ class WalletAdapter(private val wallets: MutableList<WalletDto>) :
 
     override fun onBindViewHolder(holder: WalletViewHolder, position: Int) {
         val wallet = wallets[position]
-        holder.walletIdTextView.text = "ID: ${wallet.id}"
-        holder.walletNameTextView.text = wallet.name
-        holder.walletDescriptionTextView.text = wallet.description
-        holder.walletBalanceTextView.text = "Balance: ${wallet.balance}"
+        holder.nameTextView.text = wallet.name
+        holder.descriptionTextView.text = wallet.description
+        holder.balanceTextView.text = String.format("%,d원", wallet.balance) // 금액 포맷팅
 
-        // TODO: 나중에 지갑 항목 클릭 시 수정/삭제 로직 추가 가능
-        // holder.itemView.setOnClickListener {
-        //     // 클릭 이벤트 처리
-        // }
+        // 항목 클릭 시 리스너 호출
+        holder.itemView.setOnClickListener {
+            onItemClick(wallet)
+        }
     }
 
-    override fun getItemCount(): Int {
-        return wallets.size
-    }
+    override fun getItemCount(): Int = wallets.size
 
-    // 데이터 업데이트 메서드 (외부에서 데이터 변경 시 호출)
     fun updateWallets(newWallets: List<WalletDto>) {
         wallets.clear()
         wallets.addAll(newWallets)

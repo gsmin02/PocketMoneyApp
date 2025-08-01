@@ -33,6 +33,8 @@ namespace data {
         bool updateTransaction(const domain::Transaction& transaction);
 
         bool deleteTransaction(int id);
+
+        std::vector<domain::Transaction> getTransactionsByWalletId(int walletId);
     };
 
 }

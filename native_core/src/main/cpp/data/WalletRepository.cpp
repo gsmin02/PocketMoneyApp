@@ -183,4 +183,36 @@ namespace data {
         return true;
     }
 
+    domain::Wallet WalletRepository::getWalletById(int id) {
+        sqlite3* db = dbHelper.getDb();
+        if (!db) {
+            LOGE_REPO("Failed to get database connection for getting wallet by ID.");
+            return domain::Wallet(); // 기본값 (ID 0)을 반환하여 찾지 못했음을 나타냄
+        }
+
+        std::string sql = "SELECT id, name, description, balance FROM wallets WHERE id = ?;";
+        sqlite3_stmt* stmt;
+        int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc != SQLITE_OK) {
+            LOGE_REPO("Failed to prepare statement for get wallet by ID: %s", sqlite3_errmsg(db));
+            return domain::Wallet();
+        }
+
+        sqlite3_bind_int(stmt, 1, id);
+
+        domain::Wallet wallet;
+        if ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+            wallet.id = sqlite3_column_int(stmt, 0);
+            wallet.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+            wallet.description = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+            wallet.balance = sqlite3_column_int64(stmt, 3);
+            LOGD_REPO("getWalletById: Found wallet ID %d: %s", wallet.id, wallet.name.c_str());
+        } else {
+            LOGD_REPO("getWalletById: Wallet with ID %d not found.", id);
+        }
+
+        sqlite3_finalize(stmt);
+        return wallet;
+    }
+
 }

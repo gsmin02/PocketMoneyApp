@@ -1,5 +1,6 @@
 package com.example.pocketmoneyapp
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -17,6 +18,9 @@ import java.util.Date
 import java.util.Locale
 import kotlin.collections.List
 
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+
 class MainActivity : AppCompatActivity() {
 
     companion object {
@@ -27,31 +31,10 @@ class MainActivity : AppCompatActivity() {
 
     private external fun initializeNativeDb(dbPath: String)
     private external fun createWalletNative(name: String, description: String, balance: Long): Boolean
-    // 받은 Array<WalletDto>를 toList()를 활용해 List<WalletDto>로 변환
     private external fun getAllWalletsNative(): Array<WalletDto>
-
     private external fun updateWalletNative(id: Int, name: String, description: String, balance: Long): Boolean
     private external fun deleteWalletNative(id: Int): Boolean
-    private external fun createTransactionNative(
-        walletId: Int,
-        description: String,
-        amount: Long,
-        type: Int, // TransactionType의 value (0: INCOME, 1: EXPENSE)
-        transactionDate: String
-    ): Boolean
-
-    private external fun getTransactionsByWalletNative(walletId: Int): Array<TransactionDto>
-
-    private external fun updateTransactionNative(
-        id: Int,
-        walletId: Int,
-        description: String,
-        amount: Long,
-        type: Int,
-        transactionDate: String
-    ): Boolean
-
-    private external fun deleteTransactionNative(id: Int, walletId: Int): Boolean
+    private external fun getWalletByIdNative(id: Int): WalletDto
 
     private lateinit var walletNameEditText: EditText
     private lateinit var walletDescEditText: EditText
@@ -61,9 +44,21 @@ class MainActivity : AppCompatActivity() {
     private lateinit var walletIdEditText: EditText
     private lateinit var updateWalletButton: Button
     private lateinit var deleteWalletButton: Button
+
     private lateinit var walletRecyclerView: RecyclerView
     private lateinit var walletAdapter: WalletAdapter
     private val walletList = mutableListOf<WalletDto>()
+
+    private val transactionActivityLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val shouldRefreshWallets = result.data?.getBooleanExtra("SHOULD_REFRESH_WALLETS", false) ?: false
+                if (shouldRefreshWallets) {
+                    refreshWalletList()
+                    Log.d("MainActivity", "Wallets refreshed due to TransactionListActivity result.")
+                }
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,8 +77,15 @@ class MainActivity : AppCompatActivity() {
 
         // RecyclerView 초기화
         walletRecyclerView = findViewById(R.id.walletRecyclerView)
-        walletRecyclerView.layoutManager = LinearLayoutManager(this) // 세로 방향 스크롤 리스트
-        walletAdapter = WalletAdapter(walletList)
+        walletAdapter = WalletAdapter(this, walletList) { wallet ->
+            val intent = Intent(this, TransactionListActivity::class.java).apply {
+                putExtra("WALLET_ID", wallet.id)
+                putExtra("WALLET_NAME", wallet.name)
+                putExtra("WALLET_BALANCE", wallet.balance)
+            }
+            transactionActivityLauncher.launch(intent)
+        }
+        walletRecyclerView.layoutManager = LinearLayoutManager(this)
         walletRecyclerView.adapter = walletAdapter
 
 
@@ -160,9 +162,17 @@ class MainActivity : AppCompatActivity() {
         refreshWalletList()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // MainActivity로 돌아올 때마다 지갑 목록을 새로고침하여 최신 잔액 반영
+        refreshWalletList()
+    }
+
     private fun refreshWalletList() {
-        val wallets: List<WalletDto> = getAllWalletsNative().toList()
-        walletAdapter.updateWallets(wallets) // 어댑터에 데이터 전달 및 갱신
-        Log.d("MainActivity", "Wallet list refreshed with ${wallets.size} items.")
+        val walletsArray = getAllWalletsNative()
+        walletList.clear()
+        walletList.addAll(walletsArray.toList())
+        walletAdapter.notifyDataSetChanged()
+        Log.d("MainActivity", "Wallet list refreshed. Loaded ${walletList.size} wallets.")
     }
 }

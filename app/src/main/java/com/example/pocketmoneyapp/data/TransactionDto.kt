@@ -14,6 +14,6 @@ data class TransactionDto(
     val walletId: Int,
     val amount: Long,
     val description: String,
-    val type: TransactionType,
+    val type: Int,
     val transactionDate: String
 )
