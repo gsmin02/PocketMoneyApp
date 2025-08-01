@@ -45,37 +45,40 @@ namespace data {
             LOGE_DAL("[Error] DB Table 생성 실패");
             return false;
         }
-        char *zErrMsg = 0;
-        const char *sql_wallet =
+        char *errMsg = nullptr;
+        const char* createWalletsSql =
                 "CREATE TABLE IF NOT EXISTS Wallets ("
                 "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-                "NAME TEXT NOT NULL,"
+                "NAME TEXT NOT NULL UNIQUE,"
                 "DESCRIPTION TEXT,"
-                "BALANCE INTEGER NOT NULL DEFAULT 0);";
+                "BALANCE INTEGER DEFAULT 0" // SQLite는 INTEGER로 충분
+                ");";
 
-        const char *sql_transaction =
+        // 트랜잭션 테이블 생성 SQL 추가
+        const char* createTransactionsSql =
                 "CREATE TABLE IF NOT EXISTS Transactions ("
                 "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-                "WALLET_ID INTEGER NOT NULL,"
-                "AMOUNT INTEGER NOT NULL,"
-                "TYPE TEXT NOT NULL," // 'INCOME' or 'EXPENSE'
-                "DESCRIPTION TEXT,"
-                "DATE TEXT NOT NULL,"
-                "FOREIGN KEY (WALLET_ID) REFERENCES Wallets(ID));";
+                "WalletID INTEGER NOT NULL," // 외래키
+                "Description TEXT,"
+                "Amount INTEGER NOT NULL," // 금액
+                "Type INTEGER NOT NULL," // 0: INCOME, 1: EXPENSE
+                "TransactionDate TEXT NOT NULL," // YYYY-MM-DD HH:MM:SS
+                "FOREIGN KEY(WalletID) REFERENCES Wallets(ID) ON DELETE CASCADE" // 지갑 삭제 시 트랜잭션도 삭제
+                ");";
 
-        int rc_wallet = sqlite3_exec(db, sql_wallet, 0, 0, &zErrMsg);
+        int rc_wallet = sqlite3_exec(db, createWalletsSql, 0, 0, &errMsg);
         if (rc_wallet != SQLITE_OK) {
-            LOGE_DAL("[SQL Error] Wallets table: %s", zErrMsg);
-            sqlite3_free(zErrMsg);
+            LOGE_DAL("[SQL Error] Wallets table: %s", errMsg);
+            sqlite3_free(errMsg);
             return false;
         } else {
             LOGD_DAL("[Info] Wallets table created or already exists.");
         }
 
-        int rc_transaction = sqlite3_exec(db, sql_transaction, 0, 0, &zErrMsg);
+        int rc_transaction = sqlite3_exec(db, createTransactionsSql, 0, 0, &errMsg);
         if (rc_transaction != SQLITE_OK) {
-            LOGE_DAL("[SQL Error] Transactions table: %s", zErrMsg);
-            sqlite3_free(zErrMsg);
+            LOGE_DAL("[SQL Error] Transactions table: %s", errMsg);
+            sqlite3_free(errMsg);
             return false;
         } else {
             LOGD_DAL("[Info] Transactions table created or already exists.");

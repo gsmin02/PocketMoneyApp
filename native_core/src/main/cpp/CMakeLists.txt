@@ -11,6 +11,7 @@ add_library(
         domain/Transaction.cpp
         data/DatabaseHelper.cpp
         data/WalletRepository.cpp
+        data/TransactionRepository.cpp
 )
 
 target_include_directories(native_core PRIVATE

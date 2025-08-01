@@ -12,28 +12,26 @@
 namespace domain {
 
     enum class TransactionType {
-        INCOME,
-        EXPENSE
+        INCOME = 0, // 수입
+        EXPENSE = 1 // 지출
     };
-
-    std::string transactionTypeToString(TransactionType type);
-    TransactionType stringToTransactionType(const std::string& str);
-
 
     class Transaction {
     public:
         int id;
         int walletId;
+        std::string description;
         long long amount;
         TransactionType type;
-        std::string description;
-        std::string date;
+        std::string transactionDate;
 
-        Transaction(int id = 0, int walletId = 0, long long amount = 0,
-                    TransactionType type = TransactionType::EXPENSE,
-                    std::string description = "", std::string date = "");
+        Transaction() : id(0), walletId(0), description(""), amount(0), type(TransactionType::EXPENSE), transactionDate("") {}
 
-        std::string toString() const;
+        Transaction(int id, int walletId, const std::string& description, long long amount, TransactionType type, const std::string& transactionDate)
+                : id(id), walletId(walletId), description(description), amount(amount), type(type), transactionDate(transactionDate) {}
+
+        Transaction(int walletId, const std::string& description, long long amount, TransactionType type, const std::string& transactionDate)
+                : id(0), walletId(walletId), description(description), amount(amount), type(type), transactionDate(transactionDate) {}
     };
 
 }

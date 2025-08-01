@@ -134,4 +134,53 @@ namespace data {
         return true;
     }
 
+    bool WalletRepository::recalculateBalance(int walletId) {
+        if (!dbHelper.getDb()) {
+            LOGE_REPO("Database not open for recalculateBalance.");
+            return false;
+        }
+
+        sqlite3_stmt *stmt;
+        const char* sql =
+                "SELECT SUM(CASE WHEN Type = 0 THEN Amount ELSE -Amount END) FROM Transactions WHERE WalletID = ?;";
+        int rc = sqlite3_prepare_v2(dbHelper.getDb(), sql, -1, &stmt, 0);
+        if (rc != SQLITE_OK) {
+            LOGE_REPO("SQL error (recalculateBalance prepare): %s", sqlite3_errmsg(dbHelper.getDb()));
+            return false;
+        }
+
+        sqlite3_bind_int(stmt, 1, walletId);
+
+        long long newBalance = 0;
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            if (sqlite3_column_type(stmt, 0) != SQLITE_NULL) {
+                newBalance = sqlite3_column_int64(stmt, 0);
+            }
+        }
+        sqlite3_finalize(stmt);
+        LOGD_REPO("Calculated new balance for WalletID %d: %lld", walletId, newBalance);
+
+        sqlite3_stmt *updateStmt;
+        const char* updateSql = "UPDATE Wallets SET BALANCE = ? WHERE ID = ?;";
+        rc = sqlite3_prepare_v2(dbHelper.getDb(), updateSql, -1, &updateStmt, 0);
+        if (rc != SQLITE_OK) {
+            LOGE_REPO("SQL error (recalculateBalance update prepare): %s", sqlite3_errmsg(dbHelper.getDb()));
+            return false;
+        }
+
+        sqlite3_bind_int64(updateStmt, 1, newBalance);
+        sqlite3_bind_int(updateStmt, 2, walletId);
+
+        rc = sqlite3_step(updateStmt);
+        if (rc != SQLITE_DONE) {
+            LOGE_REPO("SQL error (recalculateBalance update step): %s", sqlite3_errmsg(dbHelper.getDb()));
+            sqlite3_finalize(updateStmt);
+            return false;
+        }
+
+        sqlite3_finalize(updateStmt);
+        LOGD_REPO("Wallet ID %d balance updated to %lld successfully.", walletId, newBalance);
+        return true;
+    }
+
 }

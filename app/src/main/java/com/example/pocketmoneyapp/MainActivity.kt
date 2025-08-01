@@ -8,9 +8,13 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.pocketmoneyapp.data.TransactionDto
 import com.example.pocketmoneyapp.data.WalletDto
 import com.example.pocketmoneyapp.ui.WalletAdapter
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.collections.List
 
 class MainActivity : AppCompatActivity() {
@@ -26,9 +30,28 @@ class MainActivity : AppCompatActivity() {
     // 받은 Array<WalletDto>를 toList()를 활용해 List<WalletDto>로 변환
     private external fun getAllWalletsNative(): Array<WalletDto>
 
-    // 지갑 수정 및 삭제 JNI 함수 추가
     private external fun updateWalletNative(id: Int, name: String, description: String, balance: Long): Boolean
     private external fun deleteWalletNative(id: Int): Boolean
+    private external fun createTransactionNative(
+        walletId: Int,
+        description: String,
+        amount: Long,
+        type: Int, // TransactionType의 value (0: INCOME, 1: EXPENSE)
+        transactionDate: String
+    ): Boolean
+
+    private external fun getTransactionsByWalletNative(walletId: Int): Array<TransactionDto>
+
+    private external fun updateTransactionNative(
+        id: Int,
+        walletId: Int,
+        description: String,
+        amount: Long,
+        type: Int,
+        transactionDate: String
+    ): Boolean
+
+    private external fun deleteTransactionNative(id: Int, walletId: Int): Boolean
 
     private lateinit var walletNameEditText: EditText
     private lateinit var walletDescEditText: EditText

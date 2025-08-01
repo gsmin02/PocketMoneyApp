@@ -17,13 +17,15 @@ namespace data {
         DatabaseHelper& dbHelper;
 
     public:
-        WalletRepository(DatabaseHelper& helper);
+        explicit WalletRepository(DatabaseHelper& helper);
 
         bool createWallet(const domain::Wallet& wallet);
-        std::optional<domain::Wallet> getWalletById(int id);
+        domain::Wallet getWalletById(int id);
         std::vector<domain::Wallet> getAllWallets();
         bool updateWallet(const domain::Wallet& wallet);
         bool deleteWallet(int id);
+
+        bool recalculateBalance(int walletId);
     };
 
 }
